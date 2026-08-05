@@ -672,14 +672,14 @@ export default function UsulanMap() {
       const response = await fetch('/api/usulan')
       const result = await response.json()
       if (response.ok) {
-        const list = result.data || []
-        setUsulanList(list)
-        const summary = list.reduce<Record<string, number>>((acc, item: Usulan) => {
-          acc[item.kategori_usulan] = (acc[item.kategori_usulan] || 0) + 1
-          return acc
-        }, {})
-        setStats(summary)
-      }
+       const list = (result.data || []) as Usulan[];
+      setUsulanList(list);
+      const summary = list.reduce((acc: Record, item: Usulan) => {
+        acc[item.kategori_usulan] = (acc[item.kategori_usulan] || 0) + 1;
+        return acc;
+      }, {} as Record);
+      setStats(summary);
+    }
     }
     loadUsulan()
   }, [])
