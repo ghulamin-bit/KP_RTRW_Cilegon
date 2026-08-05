@@ -572,7 +572,8 @@ export default function UsulanMap() {
     return (s || '')
       .trim()
       .toLowerCase()
-      .normalize ? s.normalize('NFD').replace(/\p{Diacritic}/gu, '') : s
+      .normalize('NFD') // langsung dipanggil pakai ()
+      .replace(/\p{Diacritic}/gu, '');
   }
 
   function getAdminFeature(kecamatan: string, kelurahan: string) {
