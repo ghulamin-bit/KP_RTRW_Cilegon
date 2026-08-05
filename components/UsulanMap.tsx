@@ -674,10 +674,10 @@ export default function UsulanMap() {
       if (response.ok) {
        const list = (result.data || []) as Usulan[];
       setUsulanList(list);
-      const summary = list.reduce((acc: Record, item: Usulan) => {
+      const summary = list.reduce((acc: Record<string, number>, item: Usulan) => {
         acc[item.kategori_usulan] = (acc[item.kategori_usulan] || 0) + 1;
         return acc;
-      }, {} as Record);
+      }, {} as Record<string, number>);
       setStats(summary);
     }
     }
