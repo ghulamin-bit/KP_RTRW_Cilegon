@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import cilegonLogo from '../app/Lambang_Kota_Cilegon.png'
 import { memo, useEffect, useMemo, useState, useRef } from 'react'
-import 'leaflet-geosearch/dist/geosearch.css';
+import SearchControl from './SearchControl';
 
 type Usulan = {
   id: number
@@ -173,43 +173,6 @@ function BingTileLayer({ useMapHook, L }: { useMapHook: any; L: any }) {
   return null
 }
 
-function GeoSearchControlComponent({ useMapHook, L }: { useMapHook: any; L: any }) {
-  const map = useMapHook()
-
-  useEffect(() => {
-    if (!map || !L) return
-
-    import('leaflet-geosearch').then((GeoSearch) => {
-      const provider = new GeoSearch.OpenStreetMapProvider({
-        params: {
-          countrycodes: 'id',
-          viewbox: '105.8814,-6.1685,106.1852,-5.8677',
-          bounded: 1,
-        },
-      })
-
-      const searchControl = new GeoSearch.GeoSearchControl({
-        provider: provider,
-        style: 'bar',
-        autoComplete: true,
-        autoCompleteDelay: 250,
-        showMarker: false,
-        retainZoomLevel: false,
-        updateMap: true,
-        searchLabel: 'Cari lokasi di Cilegon...',
-      })
-
-      map.addControl(searchControl)
-
-      return () => {
-        map.removeControl(searchControl)
-      }
-    })
-  }, [map, L])
-
-  return null
-}
-
 const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
   const {
     center,
@@ -286,8 +249,6 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
           url={getBaseMapConfig(props.baseMap).url}
         />
       )}
-
-      <GeoSearchControlComponent useMapHook={useMap} L={L} />
 
       <LocationMarkerInner onSelect={props.onSetSelectedPosition} useMapEventsHook={useMapEvents} />
       <ZoomToFeature selectedFeature={props.selectedAdminFeature} useMapHook={useMap} L={L} />
@@ -1111,6 +1072,20 @@ export default function UsulanMap() {
       </aside>
 
       <div className="lg:w-2/4 h-[60vh] lg:h-[calc(100vh-2rem)] rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-lime-300 relative">
+        {/* KOTAK PENCARIAN TERHUBUNG KE PETA */}
+        <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md">
+          <SearchControl 
+            onSelectLocation={(lat, lng) => {
+              if (mapRef.current) {
+                mapRef.current.setView([lat, lng], 16, {
+                  animate: true,
+                  duration: 1.0
+                })
+              }
+            }} 
+          />
+        </div>
+
         {typeof window === 'undefined' && (
           <div className="h-full w-full flex items-center justify-center">Memuat peta...</div>
         )}
