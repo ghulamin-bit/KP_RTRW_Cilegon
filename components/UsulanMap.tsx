@@ -1,12 +1,3 @@
-Berdasarkan analisis file CSS dan kode komponen Anda, ditemukan penyebab kenapa pencarian gagal menggerakkan (*pan/zoom*) peta.
-
-Masalahnya ada di **`SearchControl_3.tsx`**. Komponen tersebut menggunakan *custom state* pencarian sendiri (memanggil API Nominatim secara manual dan merender daftar hasil dalam bentuk elemen HTML `<div>` mutlak). Namun, ketika item dari hasil pencarian diklik, fungsi **`mapRef.current`** atau *hook* peta **tidak terhubung** ke aksi klik tersebut di dalam file `SearchControl_3.tsx`. Akibatnya, instruksi *zoom* dan geser peta sama sekali tidak tereksekusi.
-
-Sebagai solusi yang paling bersih dan langsung berhasil, kita bisa **menggunakan *plugin* bawaan Leaflet Geosearch** (`leaflet-geosearch`) yang style-nya sudah Anda impor di file CSS (`.leaflet-control-geosearch`), sehingga Anda tidak perlu lagi memakai file *custom* `SearchControl_3.tsx` yang terpisah dan rumit.
-
-Berikut adalah perbaikan pada **`UsulanMap.tsx`** untuk mengintegrasikan *plugin* peta geosearch secara otomatis:
-
-```tsx
 'use client'
 
 import Image from 'next/image'
@@ -284,7 +275,10 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
       zoom={zoom}
       scrollWheelZoom={true}
       style={{ height: '100%', width: '100%' }}
-      whenCreated={(mapInstance: any) => setMapRef(mapInstance)}
+      whenCreated={(mapInstance: any) => {
+    mapRef.current = mapInstance;
+  }}
+>
     >
       {props.baseMap === 'bing_sat' ? (
         <BingTileLayer useMapHook={useMap} L={L} />
