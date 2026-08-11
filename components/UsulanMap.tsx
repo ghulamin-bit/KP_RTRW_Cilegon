@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import cilegonLogo from '../app/Lambang_Kota_Cilegon.png'
 import { memo, useEffect, useMemo, useState, useRef } from 'react'
+import SearchControl from './SearchControl';
 // react-leaflet and leaflet access `window` during import; to avoid SSR failures
 // we lazy-load them in the browser and render the map only once available.
 const noop = () => {}
@@ -287,6 +288,7 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
           url={getBaseMapConfig(props.baseMap).url}
         />
       )}
+      <SearchControl />
       <LocationMarkerInner onSelect={setSelectedPosition} useMapEventsHook={useMapEvents} />
       <ZoomToFeature selectedFeature={props.selectedAdminFeature} useMapHook={useMap} L={L} />
       <FitOnTrigger
