@@ -288,6 +288,18 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
           url={getBaseMapConfig(props.baseMap).url}
         />
       )}
+      <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md pointer-events-auto">
+        <SearchControl 
+          onSelectLocation={(lat, lng) => {
+            if (mapRef.current && typeof mapRef.current.setView === 'function') {
+              mapRef.current.setView([lat, lng], 16, {
+                animate: true,
+                duration: 1.0
+              });
+            }
+          }} 
+        />
+      </div>
       <LocationMarkerInner onSelect={props.onSetSelectedPosition} useMapEventsHook={useMapEvents} />
       <ZoomToFeature selectedFeature={props.selectedAdminFeature} useMapHook={useMap} L={L} />
       <FitOnTrigger
