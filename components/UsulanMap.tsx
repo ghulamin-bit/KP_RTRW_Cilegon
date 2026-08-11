@@ -8,10 +8,6 @@ import SearchControl from './SearchControl';
 // we lazy-load them in the browser and render the map only once available.
 const noop = () => {}
 
-// runtime holders for lazy imports
-// `RL` will contain react-leaflet exports, `L` will contain leaflet
-// both are set after mount to avoid server-side evaluation.
-
 type Usulan = {
   id: number
   nama_pengusul: string
@@ -47,62 +43,34 @@ function getBaseMapConfig(baseMap: BaseMapType) {
 function getPolaFillColor(namobj: string | null | undefined) {
   const name = (namobj || '').trim()
   switch (name) {
-    case 'Kawasan Hortikultura':
-      return '#E6FF4B'
-    case 'Kawasan Hutan Lindung':
-      return '#325F28'
-    case 'Kawasan Hutan Produksi Tetap':
-      return '#69B437'
-    case 'Kawasan Industri':
-      return '#690000'
-    case 'Kawasan Kesehatan':
-      return '#DF73FF'
-    case 'Kawasan Konservasi Pesisir dan Pulau-Pulau Kecil':
-      return '#1496AA'
-    case 'Kawasan Olahraga':
-      return '#9ED7C2'
-    case 'Kawasan Pariwisata':
-      return '#FFA5FF'
-    case 'Kawasan Pembangkitan Tenaga Listrik':
-      return '#00FFCD'
-    case 'Kawasan Pendidikan':
-      return '#00A884'
-    case 'Kawasan Perdagangan dan Jasa':
-      return '#FF4646'
-    case 'Kawasan Peribadatan':
-      return '#A900A9'
-    case 'Kawasan Perkantoran':
-      return '#9B9B9B'
-    case 'Kawasan Perkebunan':
-      return '#AFAF37'
-    case 'Kawasan Pertahanan dan Keamanan':
-      return '#9B00FF'
-    case 'Kawasan Perumahan':
-      return '#FFA000'
-    case 'Kawasan Ruang Terbuka Non Hijau':
-      return '#006969'
-    case 'Kawasan Sekitar Danau atau Waduk':
-      return '#B8FFC7'
-    case 'Kawasan Tanaman Pangan':
-      return '#C8F546'
-    case 'Kawasan Transportasi':
-      return '#D73700'
-    case 'Ruang Terbuka Hijau (RTH)':
-      return '#72DC00'
-    case 'Sempadan Jalan':
-      return '#A3FF73'
-    case 'Sempadan Mata Air':
-      return '#BF3319'
-    case 'Sempadan Pantai':
-      return '#CCFFCC'
-    case 'Sempadan Rel Kereta Api':
-      return '#BEFFE8'
-    case 'Sempadan Sungai':
-      return '#C2FFCC'
-    case 'Sentra Industri Kecil dan Menengah':
-      return '#EDEDD3'
-    default:
-      return '#cccccc'
+    case 'Kawasan Hortikultura': return '#E6FF4B'
+    case 'Kawasan Hutan Lindung': return '#325F28'
+    case 'Kawasan Hutan Produksi Tetap': return '#69B437'
+    case 'Kawasan Industri': return '#690000'
+    case 'Kawasan Kesehatan': return '#DF73FF'
+    case 'Kawasan Konservasi Pesisir dan Pulau-Pulau Kecil': return '#1496AA'
+    case 'Kawasan Olahraga': return '#9ED7C2'
+    case 'Kawasan Pariwisata': return '#FFA5FF'
+    case 'Kawasan Pembangkitan Tenaga Listrik': return '#00FFCD'
+    case 'Kawasan Pendidikan': return '#00A884'
+    case 'Kawasan Perdagangan dan Jasa': return '#FF4646'
+    case 'Kawasan Peribadatan': return '#A900A9'
+    case 'Kawasan Perkantoran': return '#9B9B9B'
+    case 'Kawasan Perkebunan': return '#AFAF37'
+    case 'Kawasan Pertahanan dan Keamanan': return '#9B00FF'
+    case 'Kawasan Perumahan': return '#FFA000'
+    case 'Kawasan Ruang Terbuka Non Hijau': return '#006969'
+    case 'Kawasan Sekitar Danau atau Waduk': return '#B8FFC7'
+    case 'Kawasan Tanaman Pangan': return '#C8F546'
+    case 'Kawasan Transportasi': return '#D73700'
+    case 'Ruang Terbuka Hijau (RTH)': return '#72DC00'
+    case 'Sempadan Jalan': return '#A3FF73'
+    case 'Sempadan Mata Air': return '#BF3319'
+    case 'Sempadan Pantai': return '#CCFFCC'
+    case 'Sempadan Rel Kereta Api': return '#BEFFE8'
+    case 'Sempadan Sungai': return '#C2FFCC'
+    case 'Sentra Industri Kecil dan Menengah': return '#EDEDD3'
+    default: return '#cccccc'
   }
 }
 
@@ -153,11 +121,8 @@ function FitOnTrigger({ fitTrigger, showAdminLayer, adminGeoJson, showPolaLayer,
         bounds = bounds.extend(layers[i].getBounds())
       }
 
-      console.debug('FitOnTrigger bounds', bounds && bounds.toBBoxString ? bounds.toBBoxString() : bounds)
       if (bounds && (typeof bounds.isValid === 'function' ? bounds.isValid() : true)) {
         map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 1.0 })
-      } else {
-        console.debug('FitOnTrigger: computed bounds invalid')
       }
     } catch (err) {
       console.debug('FitOnTrigger error', err)
@@ -211,12 +176,31 @@ function BingTileLayer({ useMapHook, L }: { useMapHook: any; L: any }) {
   return null
 }
 
+// Komponen Pembantu untuk Meletakkan SearchControl di dalam MapContainer
+function MapSearchBox() {
+  const map = useMap() // Hook bawaan react-leaflet untuk akses instance peta langsung
+
+  return (
+    <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md pointer-events-auto">
+      <SearchControl 
+        onSelectLocation={(lat, lng) => {
+          if (map) {
+            map.setView([lat, lng], 16, {
+              animate: true,
+              duration: 1.0
+            })
+          }
+        }} 
+      />
+    </div>
+  )
+}
+
 const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
   const {
     center,
     zoom,
     selectedPosition,
-    setSelectedPosition,
     usulanList,
     showAdminLayer,
     adminGeoJson,
@@ -228,7 +212,6 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
     polaOpacity,
     regencyGeoJson,
     setMapRef,
-    setShowAdminLayer,
   } = props
 
   const [RL, setRL] = useState<any>(null)
@@ -254,7 +237,6 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
   }
 
   const { MapContainer, TileLayer, Marker, Popup, useMapEvents, GeoJSON, useMap } = RL
-
 
   function createCategoryIcon(category: string) {
     const color = CATEGORY_COLORS[category] ?? '#0f172a'
@@ -288,18 +270,10 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
           url={getBaseMapConfig(props.baseMap).url}
         />
       )}
-      <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md pointer-events-auto">
-        <SearchControl 
-          onSelectLocation={(lat, lng) => {
-            if (mapRef.current && typeof mapRef.current.setView === 'function') {
-              mapRef.current.setView([lat, lng], 16, {
-                animate: true,
-                duration: 1.0
-              });
-            }
-          }} 
-        />
-      </div>
+
+      {/* Kotak pencarian diletakkan di sini agar langsung mengenali instance peta */}
+      <MapSearchBox />
+
       <LocationMarkerInner onSelect={props.onSetSelectedPosition} useMapEventsHook={useMapEvents} />
       <ZoomToFeature selectedFeature={props.selectedAdminFeature} useMapHook={useMap} L={L} />
       <FitOnTrigger
@@ -522,9 +496,6 @@ function isPointInGeoJSON(lat: number, lng: number, geojson: any): boolean {
   return false
 }
 
-// Leaflet-dependent helpers are implemented inside the component
-// after lazy-loading `react-leaflet` and `leaflet` in the browser.
-
 export default function UsulanMap() {
   const [selectedPosition, setSelectedPosition] = useState<[number, number] | null>(null)
   const [name, setName] = useState('')
@@ -552,13 +523,6 @@ export default function UsulanMap() {
   const [kecamatanOptions, setKecamatanOptions] = useState<string[]>([])
   const [kelurahanOptions, setKelurahanOptions] = useState<string[]>([])
   const mapRef = useRef<any>(null)
-
-  // Collapsible sidebar state
-  const [isLegendOpen, setIsLegendOpen] = useState(true)
-  const [isBasemapOpen, setIsBasemapOpen] = useState(false)
-  const [isAdminOpen, setIsAdminOpen] = useState(false)
-  const [isPolaOpen, setIsPolaOpen] = useState(true)
-  const [isRekapOpen, setIsRekapOpen] = useState(false)
 
   const handleSetSelectedPosition = (latlng: [number, number] | null) => {
     if (!latlng) {
@@ -604,9 +568,7 @@ export default function UsulanMap() {
     const traverseGeometry = (geometry: any) => {
       if (!geometry) return
       const type = geometry.type
-      if (type === 'Point') {
-        traverseCoords(geometry.coordinates)
-      } else if (type === 'MultiPoint' || type === 'LineString') {
+      if (type === 'Point' || type === 'MultiPoint' || type === 'LineString') {
         traverseCoords(geometry.coordinates)
       } else if (type === 'MultiLineString' || type === 'Polygon') {
         for (const coords of geometry.coordinates) {
@@ -645,12 +607,13 @@ export default function UsulanMap() {
     if (!feature || !feature.geometry) return null
     return getGeoJsonBounds(feature)
   }
+
   function normalizeName(s: string) {
     return (s || '')
       .trim()
       .toLowerCase()
-      .normalize('NFD') // langsung dipanggil pakai ()
-      .replace(/\p{Diacritic}/gu, '');
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
   }
 
   function getAdminFeature(kecamatan: string, kelurahan: string) {
@@ -658,7 +621,6 @@ export default function UsulanMap() {
     const targetKecamatan = (kecamatan || '').trim().toLowerCase()
     const targetKelurahan = (kelurahan || '').trim().toLowerCase()
 
-    // prefer exact matches first, fall back to partial/contains
     const exact = adminGeoJson.features.find((feature: any) => {
       const props = feature.properties || {}
       const kec = String(props.KECAMATAN ?? props.Kecamatan ?? '').trim().toLowerCase()
@@ -676,7 +638,7 @@ export default function UsulanMap() {
       const desa = String(props.DESA ?? props.Desa ?? props.Kelurahan ?? '').trim().toLowerCase()
       const nk = normalizeName(kec)
       const nd = normalizeName(desa)
-      return (nk && nk.includes(normTargetKec) || nk === normTargetKec) && (nd && nd.includes(normTargetDesa) || nd === normTargetDesa)
+      return (nk && (nk.includes(normTargetKec) || nk === normTargetKec)) && (nd && (nd.includes(normTargetDesa) || nd === normTargetDesa))
     })
   }
 
@@ -690,30 +652,18 @@ export default function UsulanMap() {
   useEffect(() => {
     if (!selectedKecamatan || !selectedKelurahan || !adminGeoJson || !mapRef.current) return
     const feature = getAdminFeature(selectedKecamatan, selectedKelurahan)
-    if (!feature) {
-      console.debug('Kelurahan not found in admin GeoJSON:', selectedKecamatan, selectedKelurahan)
-      return
-    }
+    if (!feature) return
     const bounds = getGeoJsonFeatureBounds(feature)
     if (bounds) {
       mapRef.current.fitBounds(bounds, { padding: [24, 24] })
       return
     }
 
-    // fallback: if feature has a Point geometry, center on it
     const geom = feature.geometry
     if (geom && geom.type === 'Point' && Array.isArray(geom.coordinates)) {
       const [lng, lat] = geom.coordinates
       mapRef.current.setView([lat, lng], 15)
       return
-    }
-
-    // fallback: compute bounds from geometry if possible
-    const fallbackBounds = getGeoJsonBounds(feature)
-    if (fallbackBounds) {
-      mapRef.current.fitBounds(fallbackBounds, { padding: [24, 24] })
-    } else {
-      console.debug('No usable geometry for kelurahan feature', feature)
     }
   }, [selectedKecamatan, selectedKelurahan, adminGeoJson])
 
@@ -749,14 +699,14 @@ export default function UsulanMap() {
       const response = await fetch('/api/usulan')
       const result = await response.json()
       if (response.ok) {
-       const list = (result.data || []) as Usulan[];
-      setUsulanList(list);
-      const summary = list.reduce((acc: Record<string, number>, item: Usulan) => {
-        acc[item.kategori_usulan] = (acc[item.kategori_usulan] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      setStats(summary);
-    }
+        const list = (result.data || []) as Usulan[]
+        setUsulanList(list)
+        const summary = list.reduce((acc: Record<string, number>, item: Usulan) => {
+          acc[item.kategori_usulan] = (acc[item.kategori_usulan] || 0) + 1
+          return acc
+        }, {} as Record<string, number>)
+        setStats(summary)
+      }
     }
     loadUsulan()
   }, [])
@@ -838,9 +788,7 @@ export default function UsulanMap() {
   }, [showPolaLayer, polaGeoJson])
 
   async function handleSubmit() {
-    if (!selectedPosition || !name || !description) {
-      return
-    }
+    if (!selectedPosition || !name || !description) return
 
     setIsSubmitting(true)
 
@@ -849,9 +797,7 @@ export default function UsulanMap() {
 
     const response = await fetch('/api/usulan', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         nama_pengusul: name,
         kategori_usulan: category,
@@ -899,24 +845,14 @@ export default function UsulanMap() {
   const canFitGeoJson = showAdminLayer || showPolaLayer
   const isGeoJsonLoading = (showAdminLayer && adminLoading) || (showPolaLayer && polaLoading)
   const chartMax = Math.max(1, ...Object.values(stats))
-
-  // trigger used to request the map to fit bounds for visible GeoJSON layers
   const [fitTrigger, setFitTrigger] = useState(0)
 
-  // derive the selected admin GeoJSON feature from dropdown state
   const selectedAdminFeature = useMemo(
     () => (selectedKecamatan && selectedKelurahan && adminGeoJson ? getAdminFeature(selectedKecamatan, selectedKelurahan) : null),
     [selectedKecamatan, selectedKelurahan, adminGeoJson]
   )
 
-  const selectedAdminFeatureKey = useMemo(() => {
-    if (!selectedAdminFeature) return null
-    const props = selectedAdminFeature.properties || {}
-    return `${String(props.KECAMATAN ?? props.Kecamatan ?? '').trim()}|${String(props.DESA ?? props.Desa ?? props.Kelurahan ?? '').trim()}`
-  }, [selectedAdminFeature])
-
   useEffect(() => {
-    // Auto-fit when a visible layer finishes loading
     if (!mapRef.current) return
     if (showAdminLayer && adminGeoJson) {
       fitToVisibleGeoJsonLayers()
@@ -925,7 +861,6 @@ export default function UsulanMap() {
     if (showPolaLayer && polaGeoJson) {
       fitToVisibleGeoJsonLayers()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adminGeoJson, polaGeoJson, showAdminLayer, showPolaLayer])
 
   function handleFitClick() {
@@ -933,12 +868,10 @@ export default function UsulanMap() {
       setNotification('Layer masih dimuat, tunggu selesai.')
       return
     }
-    // defensive: ensure at least one layer is visible
     if (!showAdminLayer && !showPolaLayer) {
       setNotification('Pilih layer terlebih dahulu.')
       return
     }
-    // request the map to run fitBounds in the browser-only map component
     setFitTrigger((n) => n + 1)
     setNotification('Menyesuaikan peta ke layer aktif...')
   }
@@ -1163,19 +1096,6 @@ export default function UsulanMap() {
       </aside>
 
       <div className="lg:w-2/4 h-[60vh] lg:h-[calc(100vh-2rem)] rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-lime-300 relative">
-        
-        {/* --- KOTAK PENCARIAN MELAYANG DI POJOK KIRI ATAS PETA --- */}
-        <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md">
-          <SearchControl 
-            onSelectLocation={(lat, lng) => {
-              if (mapRef.current) {
-                mapRef.current.setView([lat, lng], 16)
-              }
-            }} 
-          />
-        </div>
-
-        {/* Lazy-load react-leaflet and leaflet in the browser */}
         {typeof window === 'undefined' && (
           <div className="h-full w-full flex items-center justify-center">Memuat peta...</div>
         )}
@@ -1184,7 +1104,7 @@ export default function UsulanMap() {
             center={CILEGON_CENTER}
             zoom={DEFAULT_ZOOM}
             selectedPosition={selectedPosition}
-            setSelectedPosition={setSelectedPosition}
+            onSetSelectedPosition={handleSetSelectedPosition}
             usulanList={usulanList}
             showAdminLayer={showAdminLayer}
             adminGeoJson={adminGeoJson}
@@ -1199,7 +1119,6 @@ export default function UsulanMap() {
             polaOpacity={polaOpacity}
             baseMap={baseMap}
             setMapRef={(m: any) => (mapRef.current = m)}
-            setShowAdminLayer={setShowAdminLayer}
           />
         )}
       </div>
