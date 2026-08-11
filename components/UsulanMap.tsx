@@ -1,9 +1,18 @@
+Berdasarkan analisis file CSS dan kode komponen Anda, ditemukan penyebab kenapa pencarian gagal menggerakkan (*pan/zoom*) peta.
+
+Masalahnya ada di **`SearchControl_3.tsx`**. Komponen tersebut menggunakan *custom state* pencarian sendiri (memanggil API Nominatim secara manual dan merender daftar hasil dalam bentuk elemen HTML `<div>` mutlak). Namun, ketika item dari hasil pencarian diklik, fungsi **`mapRef.current`** atau *hook* peta **tidak terhubung** ke aksi klik tersebut di dalam file `SearchControl_3.tsx`. Akibatnya, instruksi *zoom* dan geser peta sama sekali tidak tereksekusi.
+
+Sebagai solusi yang paling bersih dan langsung berhasil, kita bisa **menggunakan *plugin* bawaan Leaflet Geosearch** (`leaflet-geosearch`) yang style-nya sudah Anda impor di file CSS (`.leaflet-control-geosearch`), sehingga Anda tidak perlu lagi memakai file *custom* `SearchControl_3.tsx` yang terpisah dan rumit.
+
+Berikut adalah perbaikan pada **`UsulanMap.tsx`** untuk mengintegrasikan *plugin* peta geosearch secara otomatis:
+
+```tsx
 'use client'
 
 import Image from 'next/image'
 import cilegonLogo from '../app/Lambang_Kota_Cilegon.png'
 import { memo, useEffect, useMemo, useState, useRef } from 'react'
-import SearchControl from './SearchControl';
+import 'leaflet-geosearch/dist/geosearch.css';
 
 type Usulan = {
   id: number
@@ -173,6 +182,44 @@ function BingTileLayer({ useMapHook, L }: { useMapHook: any; L: any }) {
   return null
 }
 
+// Komponen Kontrol Geosearch Bawaan Leaflet yang Otomatis Terhubung ke Peta
+function GeoSearchControlComponent({ useMapHook, L }: { useMapHook: any; L: any }) {
+  const map = useMapHook()
+
+  useEffect(() => {
+    if (!map || !L) return
+
+    import('leaflet-geosearch').then((GeoSearch) => {
+      const provider = new GeoSearch.OpenStreetMapProvider({
+        params: {
+          countrycodes: 'id',
+          viewbox: '105.8814,-6.1685,106.1852,-5.8677',
+          bounded: 1,
+        },
+      })
+
+      const searchControl = new GeoSearch.GeoSearchControl({
+        provider: provider,
+        style: 'bar',
+        autoComplete: true,
+        autoCompleteDelay: 250,
+        showMarker: false,
+        retainZoomLevel: false,
+        updateMap: true,
+        searchLabel: 'Cari lokasi di Cilegon...',
+      })
+
+      map.addControl(searchControl)
+
+      return () => {
+        map.removeControl(searchControl)
+      }
+    })
+  }, [map, L])
+
+  return null
+}
+
 const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
   const {
     center,
@@ -247,6 +294,9 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
           url={getBaseMapConfig(props.baseMap).url}
         />
       )}
+
+      {/* Kontrol pencarian bawaan Leaflet GeoSearch yang otomatis mengontrol zoom dan posisi peta */}
+      <GeoSearchControlComponent useMapHook={useMap} L={L} />
 
       <LocationMarkerInner onSelect={props.onSetSelectedPosition} useMapEventsHook={useMapEvents} />
       <ZoomToFeature selectedFeature={props.selectedAdminFeature} useMapHook={useMap} L={L} />
@@ -1070,20 +1120,6 @@ export default function UsulanMap() {
       </aside>
 
       <div className="lg:w-2/4 h-[60vh] lg:h-[calc(100vh-2rem)] rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-lime-300 relative">
-        {/* --- KOTAK PENCARIAN MELAYANG DI POJOK KIRI ATAS PETA --- */}
-        <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md">
-          <SearchControl 
-            onSelectLocation={(lat, lng) => {
-              if (mapRef.current) {
-                mapRef.current.setView([lat, lng], 16, {
-                  animate: true,
-                  duration: 1.0
-                })
-              }
-            }} 
-          />
-        </div>
-
         {typeof window === 'undefined' && (
           <div className="h-full w-full flex items-center justify-center">Memuat peta...</div>
         )}
@@ -1236,3 +1272,5 @@ export default function UsulanMap() {
     </div>
   )
 }
+
+```
