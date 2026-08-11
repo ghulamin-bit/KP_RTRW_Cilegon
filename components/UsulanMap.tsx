@@ -173,6 +173,17 @@ function BingTileLayer({ useMapHook, L }: { useMapHook: any; L: any }) {
   return null
 }
 
+// Komponen Controller untuk memastikan mapRef selalu terikat dengan instans peta aktif
+function MapController({ setMapRef }: { setMapRef: (map: any) => void }) {
+  const map = useMap()
+  useEffect(() => {
+    if (map) {
+      setMapRef(map)
+    }
+  }, [map, setMapRef])
+  return null
+}
+
 const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
   const {
     center,
@@ -237,10 +248,9 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
       zoom={zoom}
       scrollWheelZoom={true}
       style={{ height: '100%', width: '100%' }}
-      whenCreated={(mapInstance: any) => {
-        setMapRef(mapInstance)
-      }}
     >
+      <MapController setMapRef={setMapRef} />
+
       {props.baseMap === 'bing_sat' ? (
         <BingTileLayer useMapHook={useMap} L={L} />
       ) : (
