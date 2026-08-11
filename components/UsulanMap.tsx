@@ -173,7 +173,6 @@ function BingTileLayer({ useMapHook, L }: { useMapHook: any; L: any }) {
   return null
 }
 
-// Komponen Kontrol Geosearch Bawaan Leaflet yang Otomatis Terhubung ke Peta
 function GeoSearchControlComponent({ useMapHook, L }: { useMapHook: any; L: any }) {
   const map = useMapHook()
 
@@ -276,9 +275,8 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
       scrollWheelZoom={true}
       style={{ height: '100%', width: '100%' }}
       whenCreated={(mapInstance: any) => {
-    mapRef.current = mapInstance;
-  }}
->
+        setMapRef(mapInstance)
+      }}
     >
       {props.baseMap === 'bing_sat' ? (
         <BingTileLayer useMapHook={useMap} L={L} />
@@ -289,7 +287,6 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
         />
       )}
 
-      {/* Kontrol pencarian bawaan Leaflet GeoSearch yang otomatis mengontrol zoom dan posisi peta */}
       <GeoSearchControlComponent useMapHook={useMap} L={L} />
 
       <LocationMarkerInner onSelect={props.onSetSelectedPosition} useMapEventsHook={useMapEvents} />
