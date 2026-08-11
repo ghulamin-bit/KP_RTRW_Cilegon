@@ -1,6 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useEffect } from 'react';
+import { useMap } from 'react-leaflet';
+import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
+import 'leaflet-geosearch/dist/geosearch.css';
 
 interface SearchResult {
   place_id: number
@@ -17,7 +20,14 @@ interface SearchResult {
 }
 
 interface SearchControlProps {
-  onSelectLocation: (lat: number, lng: number, displayName: string) => void
+  onSelectLocation={(lat, lng, displayName) => {
+  if (mapRef.current) {
+    mapRef.current.setView([lat, lng], 16, {
+      animate: true,
+      duration: 1.5
+    });
+  }
+}}
 }
 
 export default function SearchControl({ onSelectLocation }: SearchControlProps) {
