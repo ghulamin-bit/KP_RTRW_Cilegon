@@ -1266,5 +1266,3 @@ export default function UsulanMap() {
     </div>
   )
 }
-
-```
