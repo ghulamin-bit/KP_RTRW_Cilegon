@@ -288,8 +288,7 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
           url={getBaseMapConfig(props.baseMap).url}
         />
       )}
-      <SearchControl />
-      <LocationMarkerInner onSelect={setSelectedPosition} useMapEventsHook={useMapEvents} />
+      <LocationMarkerInner onSelect={props.onSetSelectedPosition} useMapEventsHook={useMapEvents} />
       <ZoomToFeature selectedFeature={props.selectedAdminFeature} useMapHook={useMap} L={L} />
       <FitOnTrigger
         fitTrigger={props.fitTrigger}
@@ -363,7 +362,7 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
             dragend(event: any) {
               const marker = event.target
               const latlng = marker.getLatLng()
-              setSelectedPosition([latlng.lat, latlng.lng])
+              props.onSetSelectedPosition([latlng.lat, latlng.lng])
             },
           }}
         >
@@ -471,6 +470,46 @@ function formatCoordinates(position: [number, number] | null) {
   return `Lat: ${position[0].toFixed(6)}, Lng: ${position[1].toFixed(6)}`
 }
 
+function isPointInGeoJSON(lat: number, lng: number, geojson: any): boolean {
+  if (!geojson) return true
+  const features = geojson.features || (geojson.type === 'FeatureCollection' ? [] : [geojson])
+  
+  const pointInPolygon = (x: number, y: number, ring: any[]) => {
+    let inside = false
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0], yi = ring[i][1]
+      const xj = ring[j][0], yj = ring[j][1]
+      const intersect = ((yi > y) !== (yj > y))
+        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)
+      if (intersect) inside = !inside
+    }
+    return inside
+  }
+
+  for (const feature of features) {
+    const geom = feature.geometry
+    if (!geom) continue
+    
+    if (geom.type === 'Polygon') {
+      const rings = geom.coordinates
+      if (rings && rings.length > 0) {
+        if (pointInPolygon(lng, lat, rings[0])) {
+          return true
+        }
+      }
+    } else if (geom.type === 'MultiPolygon') {
+      for (const polygon of geom.coordinates) {
+        if (polygon && polygon.length > 0) {
+          if (pointInPolygon(lng, lat, polygon[0])) {
+            return true
+          }
+        }
+      }
+    }
+  }
+  return false
+}
+
 // Leaflet-dependent helpers are implemented inside the component
 // after lazy-loading `react-leaflet` and `leaflet` in the browser.
 
@@ -485,10 +524,10 @@ export default function UsulanMap() {
   const [stats, setStats] = useState<Record<string, number>>({})
   const [notification, setNotification] = useState<string | null>(null)
   const [showAdminLayer, setShowAdminLayer] = useState(false)
-  const [showPolaLayer, setShowPolaLayer] = useState(false)
+  const [showPolaLayer, setShowPolaLayer] = useState(true)
   const [adminOpacity, setAdminOpacity] = useState(0.05)
   const [adminWeight, setAdminWeight] = useState(2)
-  const [polaOpacity, setPolaOpacity] = useState(0.03)
+  const [polaOpacity, setPolaOpacity] = useState(0.8)
   const [polaWeight, setPolaWeight] = useState(2)
   const [baseMap, setBaseMap] = useState<BaseMapType>('osm')
   const [adminGeoJson, setAdminGeoJson] = useState<any | null>(null)
@@ -501,6 +540,30 @@ export default function UsulanMap() {
   const [kecamatanOptions, setKecamatanOptions] = useState<string[]>([])
   const [kelurahanOptions, setKelurahanOptions] = useState<string[]>([])
   const mapRef = useRef<any>(null)
+
+  // Collapsible sidebar state
+  const [isLegendOpen, setIsLegendOpen] = useState(true)
+  const [isBasemapOpen, setIsBasemapOpen] = useState(false)
+  const [isAdminOpen, setIsAdminOpen] = useState(false)
+  const [isPolaOpen, setIsPolaOpen] = useState(true)
+  const [isRekapOpen, setIsRekapOpen] = useState(false)
+
+  const handleSetSelectedPosition = (latlng: [number, number] | null) => {
+    if (!latlng) {
+      setSelectedPosition(null)
+      return
+    }
+    const [lat, lng] = latlng
+    if (adminGeoJson) {
+      const inside = isPointInGeoJSON(lat, lng, adminGeoJson)
+      if (!inside) {
+        setNotification('Lokasi usulan harus berada di dalam wilayah administratif Kota Cilegon!')
+        return
+      }
+    }
+    setSelectedPosition(latlng)
+    setNotification(null)
+  }
 
   function getGeoJsonBounds(geoJson: any) {
     if (!geoJson) return null
@@ -1087,7 +1150,19 @@ export default function UsulanMap() {
         </div>
       </aside>
 
-      <div className="lg:w-2/4 h-[60vh] lg:h-[calc(100vh-2rem)] rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-lime-300">
+      <div className="lg:w-2/4 h-[60vh] lg:h-[calc(100vh-2rem)] rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-lime-300 relative">
+        
+        {/* --- KOTAK PENCARIAN MELAYANG DI POJOK KIRI ATAS PETA --- */}
+        <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md">
+          <SearchControl 
+            onSelectLocation={(lat, lng) => {
+              if (mapRef.current) {
+                mapRef.current.setView([lat, lng], 16)
+              }
+            }} 
+          />
+        </div>
+
         {/* Lazy-load react-leaflet and leaflet in the browser */}
         {typeof window === 'undefined' && (
           <div className="h-full w-full flex items-center justify-center">Memuat peta...</div>
@@ -1242,5 +1317,3 @@ export default function UsulanMap() {
     </div>
   )
 }
-
-        
