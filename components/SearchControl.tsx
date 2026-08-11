@@ -1,9 +1,6 @@
 'use client'
 
-import { useEffect } from 'react';
-import { useMap } from 'react-leaflet';
-import { GeoSearchControl, OpenStreetMapProvider } from 'leaflet-geosearch';
-import 'leaflet-geosearch/dist/geosearch.css';
+import { useState, useEffect, useRef } from 'react';
 
 interface SearchResult {
   place_id: number
@@ -20,14 +17,7 @@ interface SearchResult {
 }
 
 interface SearchControlProps {
-  onSelectLocation={(lat, lng, displayName) => {
-  if (mapRef.current) {
-    mapRef.current.setView([lat, lng], 16, {
-      animate: true,
-      duration: 1.5
-    });
-  }
-}}
+  onSelectLocation: (lat: number, lng: number, displayName: string) => void
 }
 
 export default function SearchControl({ onSelectLocation }: SearchControlProps) {
@@ -106,6 +96,7 @@ export default function SearchControl({ onSelectLocation }: SearchControlProps) 
           className="w-full px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none"
         />
         <button
+          type="button"
           onClick={() => handleSearch(query)}
           disabled={isLoading}
           className="bg-[#01008C] hover:bg-[#01008C]/90 text-[#FFF411] px-4 py-2.5 flex items-center justify-center transition duration-150 cursor-pointer"
@@ -128,9 +119,10 @@ export default function SearchControl({ onSelectLocation }: SearchControlProps) 
           {results.map((result) => (
             <button
               key={result.place_id}
+              type="button"
               onClick={() => {
                 onSelectLocation(parseFloat(result.lat), parseFloat(result.lon), result.display_name)
-                setQuery(result.display_name.split(',')[0]) // abbreviate to first part
+                setQuery(result.display_name.split(',')[0])
                 setIsOpen(false)
               }}
               className="w-full text-left px-4 py-3 hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 text-xs text-slate-700 leading-relaxed block"
