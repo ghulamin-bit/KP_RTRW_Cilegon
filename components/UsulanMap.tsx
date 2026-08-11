@@ -4,9 +4,6 @@ import Image from 'next/image'
 import cilegonLogo from '../app/Lambang_Kota_Cilegon.png'
 import { memo, useEffect, useMemo, useState, useRef } from 'react'
 import SearchControl from './SearchControl';
-// react-leaflet and leaflet access `window` during import; to avoid SSR failures
-// we lazy-load them in the browser and render the map only once available.
-const noop = () => {}
 
 type Usulan = {
   id: number
@@ -176,26 +173,6 @@ function BingTileLayer({ useMapHook, L }: { useMapHook: any; L: any }) {
   return null
 }
 
-// Komponen Pembantu untuk Meletakkan SearchControl di dalam MapContainer
-function MapSearchBox() {
-  const map = useMap() // Hook bawaan react-leaflet untuk akses instance peta langsung
-
-  return (
-    <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md pointer-events-auto">
-      <SearchControl 
-        onSelectLocation={(lat, lng) => {
-          if (map) {
-            map.setView([lat, lng], 16, {
-              animate: true,
-              duration: 1.0
-            })
-          }
-        }} 
-      />
-    </div>
-  )
-}
-
 const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
   const {
     center,
@@ -270,9 +247,6 @@ const LazyLeafletMap = memo(function LazyLeafletMap(props: any) {
           url={getBaseMapConfig(props.baseMap).url}
         />
       )}
-
-      {/* Kotak pencarian diletakkan di sini agar langsung mengenali instance peta */}
-      <MapSearchBox />
 
       <LocationMarkerInner onSelect={props.onSetSelectedPosition} useMapEventsHook={useMapEvents} />
       <ZoomToFeature selectedFeature={props.selectedAdminFeature} useMapHook={useMap} L={L} />
@@ -1096,6 +1070,20 @@ export default function UsulanMap() {
       </aside>
 
       <div className="lg:w-2/4 h-[60vh] lg:h-[calc(100vh-2rem)] rounded-[32px] overflow-hidden shadow-2xl ring-1 ring-lime-300 relative">
+        {/* --- KOTAK PENCARIAN MELAYANG DI POJOK KIRI ATAS PETA --- */}
+        <div className="absolute top-4 left-4 right-4 z-[1000] max-w-md">
+          <SearchControl 
+            onSelectLocation={(lat, lng) => {
+              if (mapRef.current) {
+                mapRef.current.setView([lat, lng], 16, {
+                  animate: true,
+                  duration: 1.0
+                })
+              }
+            }} 
+          />
+        </div>
+
         {typeof window === 'undefined' && (
           <div className="h-full w-full flex items-center justify-center">Memuat peta...</div>
         )}
