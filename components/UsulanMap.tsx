@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import cilegonLogo from '../app/Lambang_Kota_Cilegon.png'
-import { memo, useEffect, useMemo, useState, useRef } from 'react'
+import { memo, useEffect, useMemo, useState, useRef, type ReactNode } from 'react'
 import SearchControl from './SearchControl';
 
 type Usulan = {
@@ -432,6 +432,37 @@ function formatCoordinates(position: [number, number] | null) {
   return `Lat: ${position[0].toFixed(6)}, Lng: ${position[1].toFixed(6)}`
 }
 
+function SidebarPanel({
+  title,
+  isOpen,
+  onToggle,
+  children,
+}: {
+  title: string
+  isOpen: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <div className="rounded-3xl border border-slate-300 bg-white/95 p-4 shadow-sm">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-3 text-left"
+        aria-expanded={isOpen}
+      >
+        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-600 transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M5 8l5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+      {isOpen && <div className="mt-4">{children}</div>}
+    </div>
+  )
+}
+
 function isPointInGeoJSON(lat: number, lng: number, geojson: any): boolean {
   if (!geojson) return true
   const features = geojson.features || (geojson.type === 'FeatureCollection' ? [] : [geojson])
@@ -498,6 +529,10 @@ export default function UsulanMap() {
   const [selectedKelurahan, setSelectedKelurahan] = useState('')
   const [kecamatanOptions, setKecamatanOptions] = useState<string[]>([])
   const [kelurahanOptions, setKelurahanOptions] = useState<string[]>([])
+  const [isLegendPanelOpen, setIsLegendPanelOpen] = useState(true)
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(true)
+  const [isPolaPanelOpen, setIsPolaPanelOpen] = useState(true)
+  const [isRekapPanelOpen, setIsRekapPanelOpen] = useState(true)
   const mapRef = useRef<any>(null)
 
   const handleSetSelectedPosition = (latlng: [number, number] | null) => {
@@ -856,8 +891,11 @@ export default function UsulanMap() {
     <div className="flex min-h-screen flex-col lg:flex-row gap-6 p-4">
       <aside className="lg:w-1/4 rounded-[32px] bg-lime-50 p-5 shadow-2xl ring-1 ring-lime-300">
         <div className="space-y-5">
-          <div className="rounded-3xl border border-slate-300 bg-white/95 p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-900">Legenda & Kontrol GeoJSON</h2>
+          <SidebarPanel
+            title="Legenda & Kontrol GeoJSON"
+            isOpen={isLegendPanelOpen}
+            onToggle={() => setIsLegendPanelOpen((value) => !value)}
+          >
             <div className="mt-4 space-y-3 text-sm text-slate-700">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-[#0b5]" />
@@ -969,10 +1007,13 @@ export default function UsulanMap() {
             >
               {isGeoJsonLoading ? 'Memuat layer...' : 'Fit ke layer GeoJSON'}
             </button>
-          </div>
+          </SidebarPanel>
 
-          <div className="rounded-3xl border border-slate-300 bg-white/95 p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-900">Kontrol Batas Administrasi</h2>
+          <SidebarPanel
+            title="Kontrol Batas Administrasi"
+            isOpen={isAdminPanelOpen}
+            onToggle={() => setIsAdminPanelOpen((value) => !value)}
+          >
             {showAdminLayer ? (
               <div className="mt-4 space-y-3 text-sm text-slate-700">
                 <div>
@@ -1003,10 +1044,13 @@ export default function UsulanMap() {
             ) : (
               <p className="mt-4 text-sm text-slate-500">Aktifkan layer terlebih dahulu untuk melihat kontrol opacity.</p>
             )}
-          </div>
+          </SidebarPanel>
 
-          <div className="rounded-3xl border border-slate-300 bg-white/95 p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-900">Kontrol Rencana Pola Ruang</h2>
+          <SidebarPanel
+            title="Kontrol Rencana Pola Ruang"
+            isOpen={isPolaPanelOpen}
+            onToggle={() => setIsPolaPanelOpen((value) => !value)}
+          >
             {showPolaLayer ? (
               <div className="mt-4 space-y-3 text-sm text-slate-700">
                 <div>
@@ -1037,10 +1081,13 @@ export default function UsulanMap() {
             ) : (
               <p className="mt-4 text-sm text-slate-500">Aktifkan layer terlebih dahulu untuk melihat kontrol opacity.</p>
             )}
-          </div>
+          </SidebarPanel>
 
-          <div className="rounded-3xl border border-slate-300 bg-white/95 p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-900">Rekap Total Usulan</h2>
+          <SidebarPanel
+            title="Rekap Total Usulan"
+            isOpen={isRekapPanelOpen}
+            onToggle={() => setIsRekapPanelOpen((value) => !value)}
+          >
             <div className="mt-4 space-y-3 text-sm text-slate-700">
               <div className="flex items-center justify-between rounded-2xl bg-slate-100 p-3">
                 <span>Total usulan</span>
@@ -1067,7 +1114,7 @@ export default function UsulanMap() {
                 })}
               </div>
             </div>
-          </div>
+          </SidebarPanel>
         </div>
       </aside>
 
